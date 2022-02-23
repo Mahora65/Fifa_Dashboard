@@ -104,11 +104,16 @@ shinyApp(
 #    controlbar = dashboardControlbar(),
     footer = dashboardFooter(
       fixed = FALSE,
-      left = a(
-        href= "https://twitter.com/mahora65",
-        target = "_blank", "@mahora65"
-      ),
-      right = "2021"
+      left = p("Developed by", 
+      a(
+        "Jitrayu Punrattanapongs", 
+        href = "https://www.linkedin.com/in/jitrayu-punrattanapongs/"
+        ), 
+        " 2022, ",
+        strong("version "),
+        "1.0.0"
+        ),
+      right = img(src= "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/FIFA_22_logo.svg/langfr-1920px-FIFA_22_logo.svg.png", height = 30 )
     ),
     title = 'FIFA 22 Dashboard'
   ),
