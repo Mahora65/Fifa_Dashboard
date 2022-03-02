@@ -22,14 +22,107 @@ echarts_dark_theme <- list(
 # hometab
 home_tab <- tabItem(
   tabName = 'Home',
-  "HomeTab"
+  fluidRow(
+    column(
+      width = 4,
+      "slicing"
+    ),
+    column(
+      width = 8,
+      tabsetPanel(
+        id= "homeTabset",
+        selected = 'Players',
+        tabPanel(
+          "Players",
+          "Content"
+        ),
+        tabPanel(
+          "Teams",
+          "Content"
+        ),
+        tabPanel(
+          "Wonderkids",
+          "Content"
+        ),
+        tabPanel(
+          "Hidden Gems",
+          "Content"
+        )
+      )
+    )
+  )
 )
 
 # leaguestab
 leagues_tab <- tabItem(
   tabName = 'Leagues',
-  "LeaguesTab"
+  fluidRow(
+    column(
+      width = 5,
+      selectInput(
+        inputId = 'leagues_select',
+        label = 'Leagues:',
+        choices = c(
+          'leagues_1',
+          'leagues_2',
+          'leagues_3',
+          'leagues_4'
+          ),
+      actionButton(
+        inputId = 'triggerLeague',
+        label = 'Select'
+      )
+  )
+    ),
+    column(
+      width = 7,
+      "Leagues Logos"
+    )
+  ),
+  fluidRow(
+    box(
+      title = "Leagues Stats",
+      width = 12,
+      status= 'success',
+      solidHeader= TRUE,
+      collapsible= FALSE,
+      fluidRow(
+        valueBox(
+          width = 4,
+          value = "$ 1.1 B",
+          subtitle = "Total League Value",
+          color = "warning",
+          icon = icon("dollar-sign")
+        ),
+        valueBox(
+          width = 4,
+          value = 512,
+          subtitle = "Players in the league",
+          color = 'warning',
+          icon = icon("users")
+        ),
+        valueBox(
+          width = 4,
+          value = 18,
+          subtitle = "Teams competing",
+          color = 'warning',
+          icon = icon("trophy")
+        )
+      ),
+      fluidRow(
+        column(
+          width = 6,
+          "table"
+        ),
+        column(
+          width = 6,
+          "chart"
+        )
+      )
+    )
+  )
 )
+
 
 # team tab
 teams_tab <- tabItem(
