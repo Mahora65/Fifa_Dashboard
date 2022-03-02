@@ -112,11 +112,43 @@ leagues_tab <- tabItem(
       fluidRow(
         column(
           width = 6,
-          "table"
+          box(
+            title = "Best player in the League",
+            width = 12,
+            status = 'teal',
+            solidHeader = FALSE,
+            selectInput(
+              inputId = 'league_best',
+              label = NULL,
+              choices = c(
+                'All',
+                'Foward',
+                'Midfielder',
+                'Defender',
+                'Goalkeeper'
+              )
+            ),
+            "Table"
+          )
         ),
         column(
           width = 6,
-          "chart"
+          tabsetPanel(
+            id = "league_chart",
+            selected = 'Nationality',
+            tabPanel(
+              'Nationality',
+              "chart"
+            ),
+            tabPanel(
+              "Rating Dist",
+              "chart"
+            ),
+            tabPanel(
+              "Dominate Foot",
+              "chart"
+            )
+          )
         )
       )
     )
