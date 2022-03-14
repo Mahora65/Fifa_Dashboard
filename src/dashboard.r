@@ -5,6 +5,8 @@ library(thematic)
 library(waiter)
 library(magrittr)
 
+load("../output/fifa_22_tidydata_cleaned.RData")
+
 thematic_shiny()
 
 # echarts4r theme #3d444c
