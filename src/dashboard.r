@@ -159,7 +159,54 @@ leagues_tab <- tabItem(
 # team tab
 teams_tab <- tabItem(
   tabName = 'Teams',
-  "TeamsTab"
+  fluidRow(
+    column(
+      width = 5,
+      selectInput(
+        inputId = 'leagues_select',
+        label = 'Leagues:',
+        choices = c(
+          'leagues_1',
+          'leagues_2',
+          'leagues_3',
+          'leagues_4'
+          ),
+      actionButton(
+        inputId = 'triggerLeague',
+        label = 'Select'
+      )
+  )
+    ),
+    column(
+      width = 7,
+      "Leagues Logos"
+    )
+  ),
+  fluidRow(
+    tabsetPanel(
+      id= "teams_panel",
+      selected = "Team 1",
+      vertical = TRUE,
+      tabPanel("Team 1", "Content 1"),
+      tabPanel("Team 2", "Content 2"),
+      tabPanel("Team 3", "Content 3"),
+      tabPanel("Team 4", "Content 4"),
+      tabPanel("Team 5", "Content 5"),
+      tabPanel("Team 6", "Content 6"),
+      tabPanel("Team 7", "Content 7"),
+      tabPanel("Team 8", "Content 8"),
+      tabPanel("Team 9", "Content 9"),
+      tabPanel("Team 10", "Content 10"),
+      tabPanel("Team 11", "Content 11"),
+      tabPanel("Team 12", "Content 12"),
+      tabPanel("Team 13", "Content 13"),
+      tabPanel("Team 14", "Content 14"),
+      tabPanel("Team 15", "Content 15"),
+      tabPanel("Team 16", "Content 16"),
+      tabPanel("Team 17", "Content 17"),
+      tabPanel("Team 18", "Content 18")
+    )
+  )
 )
 
 # players tab
