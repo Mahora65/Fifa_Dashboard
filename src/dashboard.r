@@ -212,7 +212,45 @@ teams_tab <- tabItem(
 # players tab
 players_tab <- tabItem(
   tabName = 'Players',
-  "PlayersTab"
+  fluidRow(
+    column(
+      width = 4,
+      "player 1"
+    ),
+    column(
+      width = 4,
+      tabBox(
+        elevation = 2,
+        id = "compare_players",
+        width= 12,
+        collapsible = FALSE,
+        closable = FALSE,
+        type = "tabs",
+        status = "olive",
+        solidHeader = TRUE,
+        selected = "Overview",
+        tabPanel(
+          "Overview",
+          "radar"
+        ),
+        tabPanel(
+          "Traits",
+          'traits'
+        ),
+        tabPanel(
+          "International",
+          "int. stat"
+        )
+      )
+    ),
+    column(
+      width = 4,
+      "player 2"
+    )
+  ),
+  fluidRow(
+    "vertical mirrored barcharts"
+  )
 )
 
 
