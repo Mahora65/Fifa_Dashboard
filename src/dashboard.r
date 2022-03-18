@@ -4,8 +4,14 @@ library(echarts4r)
 library(thematic)
 library(waiter)
 library(magrittr)
+library(dplyr)
 
 load("../output/fifa_22_tidydata_cleaned.RData")
+
+##################### VARS ################################
+
+
+###########################################################
 
 thematic_shiny()
 
@@ -27,7 +33,26 @@ home_tab <- tabItem(
   fluidRow(
     column(
       width = 4,
-      "slicing"
+      textInput("homeName", "Name"),
+      sliderInput("homeHeight", "Height", 150, 210, c(150,210)),
+      sliderInput("homeWeight", "Weight", 50, 110, c(50, 110)),
+      selectInput( "homePos", "Position", list(`All` = "all",
+                                               `Forward` = list("ST", "LW", "RW"),
+                                               `Midfiled` = list("LM", "RM", "CAM", "CM", "CDM"),
+                                               `Defender` = list("LWB", "RWB", "LB", "RB", "CB"),
+                                               `Keeper` = list("GK"))),
+      selectInput("homeNat", "Nationality", c("All", sort(unique(df$nationality_name)))),
+      selectInput("homeLeague", "League", c("All", sort(unique(df$league_name)))),
+      uiOutput("homeTeamUI"),
+      checkboxInput("homeFree", "Free Agent"),
+      checkboxGroupInput("homePreFoot", "Preferred Foot", c("Left", "Right"), inline= TRUE),
+      tags$head(tags$style(type="text/css", ".inline label{ display: table-cell; text-align: left; vertical-align: middle; } .inline .form-group{display: table-row;}")),
+      tags$div(class = "inline", numericInput(inputId = "homeMinVal", label = "Min. Value: ", value= 0),
+                                 numericInput(inputId = "homeMaxVal", label = "Max. Value: ", value= 200000000),
+                                 numericInput(inputId = "homeMinWage", label = "Min. Weage", value= 0),
+                                 numericInput(inputId = "homeMaxWage", label = "Max. Weage", value= 350000)),
+      sliderInput("homeWeakFoot", "Weak Foot", 0, 5, c(0,5)),
+      sliderInput("homeSkill", "Skill Move", 0, 5, c(0,5))
     ),
     column(
       width = 8,
@@ -36,7 +61,7 @@ home_tab <- tabItem(
         selected = 'Players',
         tabPanel(
           "Players",
-          "Content"
+          DT::dataTableOutput("homeTop")
         ),
         tabPanel(
           "Teams",
@@ -329,5 +354,40 @@ shinyApp(
     ),
     title = 'FIFA 22 Dashboard'
   ),
-  server = function(input, output, session){}
+  server = function(input, output, session){
+    
+    # Home Server
+    aoi_teams = reactive({df %>% 
+        filter(if (input$homeLeague != "All") grepl(input$homeLeague, league_name) else grepl("*", league_name)) %>%
+        pull(club_name) %>% 
+        unique() %>% 
+        sort()})
+    output$homeTeamUI <- renderUI(selectInput("homeTeam", "Team", c("All", aoi_teams())))
+    
+    homeTop_data <- reactive({
+      df %>% 
+        filter(grepl(input$homeName,short_name),
+               if (input$homePos != "all") grepl(input$homePos,player_positions) else grepl("*", player_positions),
+               if (input$homeNat != "All") grepl(input$homeNat,nationality_name) else grepl("*", nationality_name),
+               if (input$homeLeague != "All") grepl(input$homeLeague, league_name) else grepl("*", league_name),
+               if (input$homeTeam != "All") grepl(input$homeTeam, club_name) else grepl("*", club_name),
+               if (input$homeFree == TRUE) grepl("^$", league_name) else grepl("*", league_name),
+               if (is.null(input$homePreFoot)) grepl("*", preferred_foot) else grepl(input$homePreFoot, preferred_foot),
+               height_cm >= input$homeHeight[1],
+               height_cm <= input$homeHeight[2],
+               weight_kg >= input$homeWeight[1],
+               weight_kg <= input$homeWeight[2],
+               value_eur >= input$homeMinVal,
+               value_eur <= input$homeMaxVal,
+               wage_eur >= input$homeMinWage,
+               wage_eur <= input$homeMaxWage,
+               weak_foot >= input$homeWeakFoot[1],
+               weak_foot <= input$homeWeakFoot[2],
+               skill_moves >= input$homeSkill[1],
+               skill_moves <= input$homeSkill[2]) %>% 
+        top_n(overall, n = 20) %>% 
+        arrange(desc(overall), desc(potential))
+    })
+    output$homeTop <- DT::renderDataTable({homeTop_data()})
+  }
 )
