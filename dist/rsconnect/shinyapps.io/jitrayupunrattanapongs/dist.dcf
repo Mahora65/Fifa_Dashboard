@@ -1,0 +1,13 @@
+name: dist
+title: dist
+username:
+account: jitrayupunrattanapongs
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 5894735
+bundleId: 5706161
+url: https://jitrayupunrattanapongs.shinyapps.io/dist/
+when: 1647813529.65328
+lastSyncTime: 1647813529.65329
+asMultiple: FALSE
+asStatic: FALSE
