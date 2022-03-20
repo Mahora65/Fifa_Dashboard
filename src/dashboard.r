@@ -47,6 +47,16 @@ echarts_dark_theme <- list(
   name = "dark_theme"
 )
 
+#Readme
+read_me <- tabItem(tabName = "ReadMe",
+                   h2("Introduction"),
+                   p("FIFA 22 is a football simulation video game published by Electronic Arts as part of the FIFA series. It is the 29th installment in the FIFA sereis, and was released worldwide on 1 October 2021 for Microsoft Windows, Nintendo Switch, PlayStation 4, PlayStation 5, Xbox One, and Xbox Series X/S."),
+                   h2("Featurs"),
+                   p("This app have two tabs. The first tabs use slicer to filter Top 25 Player and Wonderkids. The second pages show League Summary of specific league inculding the Top 5 player accouding to their position, world map of where the player come from, rating distribution, and age distribution."),
+                   h2("Dataset"),
+                   p("This dataset come kaggle: FIFA 22 complete player dataset"),
+                   a("source", href= "https://www.kaggle.com/stefanoleone992/fifa-22-complete-player-dataset"))
+
 # hometab
 home_tab <- tabItem(tabName = 'Home',
                     fluidRow(
@@ -258,6 +268,9 @@ shinyApp(
         flat = FALSE,
         compact = FALSE,
         childIndent = TRUE,
+        menuItem("ReadMe",
+                 tabName = "ReadMe",
+                 icon = icon("newspaper")),
         menuItem("Home",
                  tabName = 'Home',
                  icon = icon("home")),
@@ -270,7 +283,8 @@ shinyApp(
     ),
     body = dashboardBody(
       e_theme_register(echarts_dark_theme$options, name = echarts_dark_theme$name),
-      tabItems(home_tab,
+      tabItems(read_me,
+               home_tab,
                leagues_tab#,
                #teams_tab,
                #players_tab
