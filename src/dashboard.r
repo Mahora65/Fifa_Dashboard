@@ -69,14 +69,6 @@ home_tab <- tabItem(
         tabPanel(
           "Wonderkids",
           gt_output("homeKids")
-        ),
-        tabPanel(
-          "Hidden Gems",
-          "Content"
-        ),
-        tabPanel(
-          "Teams",
-          "Content"
         )
       )
     )
