@@ -84,17 +84,7 @@ leagues_tab <- tabItem(
       selectInput(
         inputId = 'leagues_select',
         label = 'Leagues:',
-        choices = c(
-          'leagues_1',
-          'leagues_2',
-          'leagues_3',
-          'leagues_4'
-          ),
-      actionButton(
-        inputId = 'triggerLeague',
-        label = 'Select'
-      )
-  )
+        choices = c("All", sort(unique(df$league_name))))
     ),
     column(
       width = 7,
@@ -109,27 +99,9 @@ leagues_tab <- tabItem(
       solidHeader= TRUE,
       collapsible= FALSE,
       fluidRow(
-        valueBox(
-          width = 4,
-          value = "$ 1.1 B",
-          subtitle = "Total League Value",
-          color = "warning",
-          icon = icon("dollar-sign")
-        ),
-        valueBox(
-          width = 4,
-          value = 512,
-          subtitle = "Players in the league",
-          color = 'warning',
-          icon = icon("users")
-        ),
-        valueBox(
-          width = 4,
-          value = 18,
-          subtitle = "Teams competing",
-          color = 'warning',
-          icon = icon("trophy")
-        )
+        bs4ValueBoxOutput("vbox1"),
+        bs4ValueBoxOutput("vbox2"),
+        bs4ValueBoxOutput("vbox3")
       ),
       fluidRow(
         column(
@@ -386,7 +358,7 @@ shinyApp(
         gt() %>% 
         tab_header("Top 25 Player by Filters") %>% 
         gt_img_rows(columns = player_face_url, height= 60) %>%
-        gt_img_rows(columns = nation_flag_url, height= 24) %>%
+        gt_img_circle(column = nation_flag_url, height= 40) %>%
         gt_img_rows(columns = club_logo_url, height= 40) %>% 
         fmt_number(columns = overall, decimals = 0) %>% 
         fmt_number(columns = potential, decimals = 0) %>% 
@@ -414,7 +386,7 @@ shinyApp(
           skill_moves= "Skill Moves",
           age = "Age"
         ) %>% 
-        gt_theme_guardian() 
+        gt_theme_538() 
     })
     output$homeTop <- render_gt(expr= homeTop_data(), width = pct(100))
     
@@ -444,9 +416,9 @@ shinyApp(
         select(player_face_url, nation_flag_url, overall, potential, short_name, player_positions, age, preferred_foot, weak_foot, skill_moves, club_logo_url) %>% 
         arrange(desc(potential), desc(overall)) %>% 
         gt() %>% 
-        tab_header("Top 25 Wonderkids by filters") %>% 
+        tab_header("Top 25 Wonderkids by Filters") %>% 
         gt_img_rows(columns = player_face_url, height= 60) %>%
-        gt_img_rows(columns = nation_flag_url, height= 24) %>%
+        gt_img_circle(column = nation_flag_url, height= 40) %>%
         gt_img_rows(columns = club_logo_url, height= 40) %>% 
         fmt_number(columns = overall, decimals = 0) %>% 
         fmt_number(columns = potential, decimals = 0) %>% 
@@ -474,8 +446,46 @@ shinyApp(
           skill_moves= "Skill Moves",
           age = "Age"
         ) %>% 
-        gt_theme_guardian() 
+        gt_theme_538() 
     })
     output$homeKids <- render_gt(expr= homeKids_data(), width = pct(100))
+    
+    #League Server
+  
+  output$vbox1 <- renderbs4ValueBox({
+    bs4ValueBox(
+      width = 4,
+      value = round((df %>% 
+                       filter(if (input$leagues_select != "All") grepl(input$leagues_select, league_name) else grepl("*", league_name)) %>% 
+                       pull(value_eur) %>% 
+                       sum())/ 1000000000, digits = 2),
+      footer = "Total League Value",
+      subtitle = "billons Euros",
+      color = "warning",
+      icon = icon("dollar-sign")
+    )
+  })
+  
+  output$vbox2 <- renderbs4ValueBox({
+    bs4ValueBox(
+      width = 4,
+      value = df %>% filter(if (input$leagues_select != "All") grepl(input$leagues_select, league_name) else grepl("*", league_name)) %>% count() %>% pull(n),
+      subtitle = "Players",
+      footer = "Total Players in the league",
+      color = 'warning',
+      icon = icon("users")
+    )
+  })
+  
+  output$vbox3 <- renderbs4ValueBox({
+    bs4ValueBox(
+      width = 4,
+      value = df %>% filter(if (input$leagues_select != "All") grepl(input$leagues_select, league_name) else grepl("*", league_name)) %>%  pull(club_name) %>% unique() %>% length(),
+      subtitle = "Teams",
+      footer = "Total Teams competing",
+      color = 'warning',
+      icon = icon("trophy")
+    )
+  })
   }
 )
