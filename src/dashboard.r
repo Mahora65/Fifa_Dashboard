@@ -8,6 +8,23 @@ library(dplyr)
 library(gt)
 library(gtExtras)
 library(RColorBrewer)
+library(maps)
+library(plotly)
+library(tidyverse)
+library(magrittr)
+library(DataExplorer)
+library(maps)
+library(plotly)
+library(DT)
+library(tidytext)
+library(gridExtra)
+library(factoextra)
+library(kableExtra)
+library(splitstackshape)
+library(ggthemes)
+library(data.table)
+library(waffle)
+library(knitr)
 
 load("../output/fifa_22_tidydata_cleaned.RData")
 
@@ -80,15 +97,15 @@ leagues_tab <- tabItem(
   tabName = 'Leagues',
   fluidRow(
     column(
-      width = 5,
+      width = 4,
       selectInput(
         inputId = 'leagues_select',
         label = 'Leagues:',
         choices = c("All", sort(unique(df$league_name))))
     ),
     column(
-      width = 7,
-      "Leagues Logos"
+      width = 8,
+      ""
     )
   ),
   fluidRow(
@@ -115,14 +132,14 @@ leagues_tab <- tabItem(
               inputId = 'league_best',
               label = NULL,
               choices = c(
-                'All',
-                'Foward',
-                'Midfielder',
-                'Defender',
-                'Goalkeeper'
+                'All' = "All",
+                'Foward' = "FWD",
+                'Midfielder' = "MID",
+                'Defender' = "DEF",
+                'Goalkeeper' = "GK"
               )
             ),
-            "Table"
+            gt_output("league_tb")
           )
         ),
         column(
@@ -132,15 +149,15 @@ leagues_tab <- tabItem(
             selected = 'Nationality',
             tabPanel(
               'Nationality',
-              "chart"
+              plotlyOutput("player_map")
             ),
             tabPanel(
               "Rating Dist",
-              "chart"
+              plotlyOutput("player_dist")
             ),
             tabPanel(
-              "Dominate Foot",
-              "chart"
+              "Age Dist",
+              plotlyOutput("age_dist")
             )
           )
         )
@@ -450,7 +467,7 @@ shinyApp(
     })
     output$homeKids <- render_gt(expr= homeKids_data(), width = pct(100))
     
-    #League Server
+    #League Serve
   
   output$vbox1 <- renderbs4ValueBox({
     bs4ValueBox(
@@ -487,5 +504,66 @@ shinyApp(
       icon = icon("trophy")
     )
   })
+  
+  output$player_map <- renderPlotly({ggplotly(ggplot(map_data("world") %>%
+                                                       mutate(region = as.character(region)) %>% 
+                                                       left_join((df %>% 
+                                                                    filter(if (input$leagues_select != "All") grepl(input$leagues_select, league_name) else grepl("*", league_name)) %>%
+                                                                    mutate(Nationality = as.character(nationality_name),
+                                                                                Nationality = if_else(nationality_name %in% "England", 
+                                                                                                      "UK", nationality_name)) %>%
+                                                                    count(Nationality, name = "Number of Player") %>%
+                                                                    rename(region = Nationality) %>%
+                                                                    mutate(region = as.character(region))), by = "region"), aes(long, lat, group = group))+
+                                                geom_polygon(aes(fill = `Number of Player` ), color = "white", show.legend = FALSE)+
+                                                scale_fill_viridis_c(option = "C")+
+                                                theme_fivethirtyeight()+
+                                                labs(fill = "Number of Player",
+                                                     title = "Number of Player From Around the World"))})
+  output$player_dist <- renderPlotly({ggplotly(df %>% 
+                                                 filter(if (input$leagues_select != "All") grepl(input$leagues_select, league_name) else grepl("*", league_name),
+                                                        if (input$league_best != "All") grepl(input$league_best, Class) else grepl("*", Class)) %>%
+                                                 ggplot(aes(x = overall)) +
+                                                 geom_histogram(color= "white", fill="darkgrey") +
+                                                 ggtitle("Player Ratings Distribution") +
+                                                 theme_fivethirtyeight() +
+                                                 theme(axis.text.y = element_blank()))})
+  output$age_dist <- renderPlotly({ggplotly(df %>% 
+                                              filter(if (input$leagues_select != "All") grepl(input$leagues_select, league_name) else grepl("*", league_name),
+                                                     if (input$league_best != "All") grepl(input$league_best, Class) else grepl("*", Class)) %>%
+                                              ggplot(aes(x = age))+
+                                              geom_histogram(color= "white", fill= "darkgrey") +
+                                              ggtitle("Player Age Distribution")+
+                                              theme_fivethirtyeight() +
+                                              theme(axis.text.y = element_blank()))})
+  league_tb_data <- reactive({
+    df %>% 
+      filter(if (input$leagues_select != "All") grepl(input$leagues_select, league_name) else grepl("*", league_name),
+             if (input$league_best != "All") grepl(input$league_best, Class) else grepl("*", Class)) %>% 
+      select(player_face_url, nation_flag_url, overall, short_name, player_positions, age, club_logo_url) %>% 
+      slice_max(n= 5, with_ties = FALSE, order_by = overall) %>% 
+      gt() %>% 
+      gt_img_rows(columns = player_face_url, height= 60) %>%
+      gt_img_circle(column = nation_flag_url, height= 40) %>%
+      gt_img_rows(columns = club_logo_url, height= 40) %>% 
+      fmt_number(columns = overall, decimals = 0) %>% 
+      gt_color_rows(columns= overall, palette = "RColorBrewer::RdYlGn", domain = c(0, 100)) %>% 
+      cols_width(overall ~ px(75),
+                 age ~ px(75),
+                 player_face_url ~ px(75),
+                 nation_flag_url ~ px(50)) %>%
+      cols_label(
+        player_face_url = "",
+        nation_flag_url = "",
+        club_logo_url = "",
+        overall = "Overall",
+        short_name = "Name",
+        player_positions = "Positions",
+        age = "Age"
+      ) %>% 
+      gt_theme_538()
+  })
+  
+  output$league_tb <- render_gt(expr= league_tb_data(), width = pct(100))
   }
 )
