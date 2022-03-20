@@ -4,6 +4,17 @@ library(echarts4r)
 library(thematic)
 library(waiter)
 library(magrittr)
+library(dplyr)
+library(gt)
+library(gtExtras)
+library(RColorBrewer)
+
+load("../output/fifa_22_tidydata_cleaned.RData")
+
+##################### VARS ################################
+
+
+###########################################################
 
 thematic_shiny()
 
@@ -24,29 +35,40 @@ home_tab <- tabItem(
   tabName = 'Home',
   fluidRow(
     column(
-      width = 4,
-      "slicing"
+      width = 3,
+      textInput("homeName", "Name"),
+      sliderInput("homeHeight", "Height", 150, 210, c(150,210)),
+      sliderInput("homeWeight", "Weight", 50, 110, c(50, 110)),
+      selectInput( "homePos", "Position", list(`All` = "all",
+                                               `Forward` = list("ST", "LW", "RW"),
+                                               `Midfiled` = list("LM", "RM", "CAM", "CM", "CDM"),
+                                               `Defender` = list("LWB", "RWB", "LB", "RB", "CB"),
+                                               `Keeper` = list("GK"))),
+      selectInput("homeNat", "Nationality", c("All", sort(unique(df$nationality_name)))),
+      selectInput("homeLeague", "League", c("All", sort(unique(df$league_name)))),
+      uiOutput("homeTeamUI"),
+      checkboxInput("homeFree", "Free Agent"),
+      checkboxGroupInput("homePreFoot", "Preferred Foot", c("Left", "Right"), inline= TRUE),
+      tags$head(tags$style(type="text/css", ".inline label{ display: table-cell; text-align: left; vertical-align: middle; } .inline .form-group{display: table-row;}")),
+      tags$div(class = "inline", numericInput(inputId = "homeMinVal", label = "Min. Value: ", value= 0),
+                                 numericInput(inputId = "homeMaxVal", label = "Max. Value: ", value= 200000000),
+                                 numericInput(inputId = "homeMinWage", label = "Min. Weage", value= 0),
+                                 numericInput(inputId = "homeMaxWage", label = "Max. Weage", value= 350000)),
+      sliderInput("homeWeakFoot", "Weak Foot", 0, 5, c(0,5)),
+      sliderInput("homeSkill", "Skill Move", 0, 5, c(0,5))
     ),
     column(
-      width = 8,
+      width = 9,
       tabsetPanel(
         id= "homeTabset",
         selected = 'Players',
         tabPanel(
           "Players",
-          "Content"
-        ),
-        tabPanel(
-          "Teams",
-          "Content"
+          gt_output("homeTop")
         ),
         tabPanel(
           "Wonderkids",
-          "Content"
-        ),
-        tabPanel(
-          "Hidden Gems",
-          "Content"
+          gt_output("homeKids")
         )
       )
     )
@@ -327,5 +349,133 @@ shinyApp(
     ),
     title = 'FIFA 22 Dashboard'
   ),
-  server = function(input, output, session){}
+  server = function(input, output, session){
+    
+    # Home Server
+    aoi_teams = reactive({df %>% 
+        filter(if (input$homeLeague != "All") grepl(input$homeLeague, league_name) else grepl("*", league_name)) %>%
+        pull(club_name) %>% 
+        unique() %>% 
+        sort()})
+    output$homeTeamUI <- renderUI(selectInput("homeTeam", "Team", c("All", aoi_teams())))
+    
+    homeTop_data <- reactive({
+      df %>% 
+        filter(grepl(input$homeName,short_name),
+               if (input$homePos != "all") grepl(input$homePos,player_positions) else grepl("*", player_positions),
+               if (input$homeNat != "All") grepl(input$homeNat,nationality_name) else grepl("*", nationality_name),
+               if (input$homeLeague != "All") grepl(input$homeLeague, league_name) else grepl("*", league_name),
+               if (input$homeTeam != "All") grepl(input$homeTeam, club_name) else grepl("*", club_name),
+               if (input$homeFree == TRUE) grepl("^$", league_name) else grepl("*", league_name),
+               if (is.null(input$homePreFoot)) grepl("*", preferred_foot) else grepl(input$homePreFoot, preferred_foot),
+               height_cm >= input$homeHeight[1],
+               height_cm <= input$homeHeight[2],
+               weight_kg >= input$homeWeight[1],
+               weight_kg <= input$homeWeight[2],
+               value_eur >= input$homeMinVal,
+               value_eur <= input$homeMaxVal,
+               wage_eur >= input$homeMinWage,
+               wage_eur <= input$homeMaxWage,
+               weak_foot >= input$homeWeakFoot[1],
+               weak_foot <= input$homeWeakFoot[2],
+               skill_moves >= input$homeSkill[1],
+               skill_moves <= input$homeSkill[2]) %>% 
+        slice_max(n= 25, with_ties = FALSE, order_by = overall) %>% 
+        select(player_face_url, nation_flag_url, overall, potential, short_name, player_positions, age, preferred_foot, weak_foot, skill_moves, club_logo_url)%>% 
+        arrange(desc(overall), desc(potential)) %>% 
+        gt() %>% 
+        tab_header("Top 25 Player by Filters") %>% 
+        gt_img_rows(columns = player_face_url, height= 60) %>%
+        gt_img_rows(columns = nation_flag_url, height= 24) %>%
+        gt_img_rows(columns = club_logo_url, height= 40) %>% 
+        fmt_number(columns = overall, decimals = 0) %>% 
+        fmt_number(columns = potential, decimals = 0) %>% 
+        fmt_number(columns = age, decimals = 0) %>% 
+        gt_fa_rating(column = weak_foot) %>%
+        gt_fa_rating(column = skill_moves) %>% 
+        cols_align(align = "center", columns = c(overall, potential, age, player_positions, nation_flag_url)) %>% 
+        gt_color_rows(columns= overall, palette = "RColorBrewer::RdYlGn", domain = c(0, 100)) %>% 
+        gt_color_rows(columns= potential, palette = "RColorBrewer::RdYlGn", domain = c(0, 100)) %>% 
+        cols_width(overall ~ px(75),
+                   age ~ px(75),
+                   player_face_url ~ px(75),
+                   nation_flag_url ~ px(50),
+                   preferred_foot ~ px(75)) %>% 
+        cols_label(
+          player_face_url = "",
+          nation_flag_url = "",
+          club_logo_url = "",
+          overall = "Overall",
+          potential= "Potential",
+          short_name = "Name",
+          player_positions = "Positions",
+          preferred_foot = "Foot",
+          weak_foot = "Weak Foot",
+          skill_moves= "Skill Moves",
+          age = "Age"
+        ) %>% 
+        gt_theme_guardian() 
+    })
+    output$homeTop <- render_gt(expr= homeTop_data(), width = pct(100))
+    
+    homeKids_data <- reactive({
+      df %>%
+        filter(grepl(input$homeName,short_name),
+               if (input$homePos != "all") grepl(input$homePos,player_positions) else grepl("*", player_positions),
+               if (input$homeNat != "All") grepl(input$homeNat,nationality_name) else grepl("*", nationality_name),
+               if (input$homeLeague != "All") grepl(input$homeLeague, league_name) else grepl("*", league_name),
+               if (input$homeTeam != "All") grepl(input$homeTeam, club_name) else grepl("*", club_name),
+               if (input$homeFree == TRUE) grepl("^$", league_name) else grepl("*", league_name),
+               if (is.null(input$homePreFoot)) grepl("*", preferred_foot) else grepl(input$homePreFoot, preferred_foot),
+               height_cm >= input$homeHeight[1],
+               height_cm <= input$homeHeight[2],
+               weight_kg >= input$homeWeight[1],
+               weight_kg <= input$homeWeight[2],
+               value_eur >= input$homeMinVal,
+               value_eur <= input$homeMaxVal,
+               wage_eur >= input$homeMinWage,
+               wage_eur <= input$homeMaxWage,
+               weak_foot >= input$homeWeakFoot[1],
+               weak_foot <= input$homeWeakFoot[2],
+               skill_moves >= input$homeSkill[1],
+               skill_moves <= input$homeSkill[2],
+               age <= 21) %>% 
+        slice_max(n= 25, with_ties = FALSE, order_by = potential) %>%
+        select(player_face_url, nation_flag_url, overall, potential, short_name, player_positions, age, preferred_foot, weak_foot, skill_moves, club_logo_url) %>% 
+        arrange(desc(potential), desc(overall)) %>% 
+        gt() %>% 
+        tab_header("Top 25 Wonderkids by filters") %>% 
+        gt_img_rows(columns = player_face_url, height= 60) %>%
+        gt_img_rows(columns = nation_flag_url, height= 24) %>%
+        gt_img_rows(columns = club_logo_url, height= 40) %>% 
+        fmt_number(columns = overall, decimals = 0) %>% 
+        fmt_number(columns = potential, decimals = 0) %>% 
+        fmt_number(columns = age, decimals = 0) %>% 
+        gt_fa_rating(column = weak_foot) %>%
+        gt_fa_rating(column = skill_moves) %>% 
+        cols_align(align = "center", columns = c(overall, potential, age, player_positions, nation_flag_url)) %>% 
+        gt_color_rows(columns= overall, palette = "RColorBrewer::RdYlGn", domain = c(0, 100)) %>% 
+        gt_color_rows(columns= potential, palette = "RColorBrewer::RdYlGn", domain = c(0, 100)) %>% 
+        cols_width(overall ~ px(75),
+                   age ~ px(75),
+                   player_face_url ~ px(75),
+                   nation_flag_url ~ px(50),
+                   preferred_foot ~ px(75)) %>% 
+        cols_label(
+          player_face_url = "",
+          nation_flag_url = "",
+          club_logo_url = "",
+          overall = "Overall",
+          potential= "Potential",
+          short_name = "Name",
+          player_positions = "Positions",
+          preferred_foot = "Foot",
+          weak_foot = "Weak Foot",
+          skill_moves= "Skill Moves",
+          age = "Age"
+        ) %>% 
+        gt_theme_guardian() 
+    })
+    output$homeKids <- render_gt(expr= homeKids_data(), width = pct(100))
+  }
 )
