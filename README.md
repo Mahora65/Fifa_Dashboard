@@ -3,6 +3,8 @@
 
 This dashboard is created to filter the FIFA 22 palyer database in order to scount player according to filter parameters.
 
+> Try this app at : [shinyapp.io](https://jitrayupunrattanapongs.shinyapps.io/dist/)
+
 
 ## Features
 
