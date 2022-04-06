@@ -45,8 +45,8 @@ echarts_dark_theme <- list(
 read_me <- tabItem(tabName = "ReadMe",
                    h2("Introduction"),
                    p("FIFA 22 is a football simulation video game published by Electronic Arts as part of the FIFA series. It is the 29th installment in the FIFA sereis, and was released worldwide on 1 October 2021 for Microsoft Windows, Nintendo Switch, PlayStation 4, PlayStation 5, Xbox One, and Xbox Series X/S."),
-                   h2("Featurs"),
-                   p("This app have two tabs. The first tabs use slicer to filter Top 25 Player and Wonderkids. The second pages show League Summary of specific league inculding the Top 5 player accouding to their position, world map of where the player come from, rating distribution, and age distribution."),
+                   h2("Features"),
+                   p("This app have two tabs. The first tabs use slicer to filter Top 25 Player and Wonderkids (players under 21). The second pages show League Summary of specific league inculding the Top 5 player accouding to their position, world map of where the player come from, rating distribution, and age distribution."),
                    h2("Dataset"),
                    p("This dataset come kaggle: FIFA 22 complete player dataset"),
                    a("source", href= "https://www.kaggle.com/stefanoleone992/fifa-22-complete-player-dataset"))
